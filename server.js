@@ -1,4 +1,4 @@
-//Marina Chow (101050751)
+//Marina Chow
 
 //Create express app
 const express = require('express');
@@ -12,6 +12,18 @@ app.use(methodOverride("_method"));
 const pug = require("pug");
 const path = require("path");
 app.set("view engine", "pug");
+app.set("views", "./public/views")
+
+//MongoDB
+const mongoose = require("mongoose");
+const Film = require('./FilmModel')
+const User = require('./UserModel')
+let ObjectId = require('mongodb').ObjectID;
+const MongoDBStore = require('connect-mongodb-session')(session);
+const store = new MongoDBStore({
+	url: 'mongodb://localhost/movieDB',
+	collection: 'sessions'
+});
 
 app.use(express.static("public"));
 app.use(express.json());
@@ -19,12 +31,14 @@ app.use(
 	session({
 		secret: "some secret key here",
 		resave: true,
+		store: store,
 		saveUninitialized: false, 
 	})
 );
 
 // MIDDLEWARE
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')))
 
 //Set up the required data
 let moviesArray = require("./movie-data-2500.json");
@@ -140,7 +154,7 @@ function most(arr){
 // Static pages
 // Home page
 app.get("/", (request, response) => {
-	response.status(200).sendFile("pages/index.html", {root: __dirname});
+	response.status(200).render("index", { session: request.session });
 });
 // CSS
 app.get("/center", (request, response) => {
@@ -148,7 +162,7 @@ app.get("/center", (request, response) => {
 });
 // Login page
 app.get("/login", (request, response) => {
-	response.status(200).sendFile("pages/login.html", {root: __dirname});
+	response.status(200).sendFile("public/views/login.html", {root: __dirname});
 });
 // Sign up page
 app.get("/create", (request, response) => {
@@ -166,9 +180,15 @@ app.get("/addMovie", (request, response) => {
 // Dynamically rendered pages
 // Page to display all movies in database
 app.get("/browseMovies", (request, response) => {
-	response.status(200).send(
-		pug.renderFile("./pages/browseMovies.pug", { movies: moviesArray })
-	);
+	Film.find().exec(function(err, filmResult) {
+		if (err)
+			response.send(err);
+		else if (filmResult.length)
+			response.status(200).render("browseMovies", { movies: filmResult });
+		else
+			response.send("No movies found");
+		db.close();
+	});	
 });
 // Page to search for a movie by title, genre and/or actor name
 app.get("/movieSearch", (request, response) => {
@@ -321,89 +341,123 @@ app
 		response.status(200)
 		response.redirect("/movies/" + newMovie.mID);
 	});
-app
-	.route("/movies/:mID")
-	// Gets individual movie
-	.get((request, response) => {
-		// Check if a movie with the specified ID exists
-		let targetMovie = moviesArray.find(obj => {
-			return obj.mID == request.params.mID
+app.get("/movies/:mID", (request, response) => {
+	Film.findById(request.params.mID).exec((err, movie) => {
+
+		response.format({
+			'application/json': function () {
+				console.log('The request was JSON..')
+				response.status(200).send(JSON.stringify(movie))
+			},
+
+			'text/html': function () {
+				response.render("movie", { profile: request.session.username, movie : movie })
+			}
 		})
-		if (targetMovie) {
-			response.status(200);
-			// Create copies of review objects to access attributes to display on movies's page
-			let reviewObjs = [];
-			targetMovie.Reviews.forEach(reviewID => {
-				reviewsArray.forEach(reviewObj => {
-					if (reviewID == reviewObj.rID)
-					reviewObjs.push(Object.assign({}, reviewObj))
-				});
-			});
-			// Create a user object copy for each review's reviewer
-			reviewObjs.forEach(reviewObj => {
-				usersArray.forEach(reviewer => {
-					if (reviewObj.reviewer == reviewer.uID)
-						reviewObj.reviewer = Object.assign({}, reviewer);
-				})
-			})
-			// Get all genres from targetMovie
-			let targetGenres = [];
-			targetMovie.Genre.forEach(gen => {
-				if (!targetGenres.includes(gen))
-					targetGenres.push(gen)
-				});
-			// Find movies with same genres and add to movie's Similar array
-			targetGenres.forEach(prefer => {
-				let similar = moviesArray.find(movie => {
-					return targetMovie.mID !== movie.mID && !targetMovie.Similar.includes(movie) && movie.Genre.includes(prefer);
-				});
-				if (similar && targetMovie.Similar.length <= 3)
-					targetMovie.Similar.push(similar);
-			});
-			// If user is logged in, send that users information to track their activity on the page
-			if (request.session.username)
-				response.send(pug.renderFile("./pages/movie.pug", { movie: targetMovie, profile: request.session.username, reviews: reviewObjs, similars: targetMovie.Similar }));
-			else
-				response.send(pug.renderFile("./pages/movie.pug", { movie: targetMovie, reviews: reviewObjs, similars: targetMovie.Similar }));
-		} else
-			response.status(404).send(`Movie with ID ${request.params.mID} does not exist.`);
+	})
+		// // Check if a movie with the specified ID exists
+		// let targetMovie = moviesArray.find(obj => {
+		// 	return obj.mID == request.params.mID
+		// })
+		// if (targetMovie) {
+		// 	response.status(200);
+		// 	// Create copies of review objects to access attributes to display on movies's page
+		// 	let reviewObjs = [];
+		// 	targetMovie.Reviews.forEach(reviewID => {
+		// 		reviewsArray.forEach(reviewObj => {
+		// 			if (reviewID == reviewObj.rID)
+		// 			reviewObjs.push(Object.assign({}, reviewObj))
+		// 		});
+		// 	});
+		// 	// Create a user object copy for each review's reviewer
+		// 	reviewObjs.forEach(reviewObj => {
+		// 		usersArray.forEach(reviewer => {
+		// 			if (reviewObj.reviewer == reviewer.uID)
+		// 				reviewObj.reviewer = Object.assign({}, reviewer);
+		// 		})
+		// 	})
+		// 	// Get all genres from targetMovie
+		// 	let targetGenres = [];
+		// 	targetMovie.Genre.forEach(gen => {
+		// 		if (!targetGenres.includes(gen))
+		// 			targetGenres.push(gen)
+		// 		});
+		// 	// Find movies with same genres and add to movie's Similar array
+		// 	targetGenres.forEach(prefer => {
+		// 		let similar = moviesArray.find(movie => {
+		// 			return targetMovie.mID !== movie.mID && !targetMovie.Similar.includes(movie) && movie.Genre.includes(prefer);
+		// 		});
+		// 		if (similar && targetMovie.Similar.length <= 3)
+		// 			targetMovie.Similar.push(similar);
+		// 	});
+		// 	// If user is logged in, send that users information to track their activity on the page
+		// 	if (request.session.username)
+		// 		response.send(pug.renderFile("./pages/movie.pug", { movie: targetMovie, profile: request.session.username, reviews: reviewObjs, similars: targetMovie.Similar }));
+		// 	else
+		// 		response.send(pug.renderFile("./pages/movie.pug", { movie: targetMovie, reviews: reviewObjs, similars: targetMovie.Similar }));
+		// } else
+		// 	response.status(404).send(`Movie with ID ${request.params.mID} does not exist.`);
 		
 	})
 
 // Users requests
 app.get("/users/:uID", (request, response) => {
-	// Check if a user with the specified ID exists
-	let targetUser = usersArray.find(obj => {
-		return obj.uID === request.params.uID
+
+	let uID = new ObjectId(request.params.uID)
+	User.findById(uID).populate('watchlist').exec((err, user) => {
+
+		if (err) response.status(404).send("Can't find user")
+
+		response.format({
+			'application/json': function () {
+				console.log('The request was JSON..');
+				response.status(200).send(JSON.stringify(user))
+			},
+
+			'text/html': function () {
+				
+				console.log("The request was HTML..");
+				if (request.session.loggedin && user.username == request.session.username) 
+					response.status(200).render("profile", { profile: user, session: request.session })
+				else if (request.session.loggedin && user) 
+					response.status(200).render("user", { user: user, session: request.session })
+				else 
+					response.status(300).send("You are not logged in")
+			}
+		})
 	})
-	if (targetUser) {
-		response.status(200);
-		// Create copies of review objects to access attributes to display on user's page
-		let reviewObjs = [];
-		targetUser.reviews.forEach(reviewID => {
-			reviewsArray.forEach(reviewObj => {
-				if (reviewID == reviewObj.rID)
-				reviewObjs.push(Object.assign({}, reviewObj))
-			});
-		});
-		// Create copies of movie objects to display with each review
-		moviesArray.forEach(movieObj => {
-			reviewObjs.forEach(reviewObj => {
-				if (movieObj.mID == reviewObj.movie)
-					reviewObj.movie = Object.assign({}, movieObj);
-			});
-		});
-		// Display profile if user is logged in
-		if (request.session.username == targetUser.uID)
-			response.send(pug.renderFile("./pages/profile.pug", { profile: targetUser }));
-		else {
-			if (request.session.username)
-				response.send(pug.renderFile("./pages/user.pug", { user: targetUser, profile: request.session.username, reviews: reviewObjs}));
-			else
-				response.send(pug.renderFile("./pages/user.pug", { user: targetUser, reviews: reviewObjs}));
-		}
-	} else 
-		response.status(404).send(`User with ID ${request.params.uID} does not exist.`);
+	// // Check if a user with the specified ID exists
+	// let targetUser = usersArray.find(obj => {
+	// 	return obj.uID === request.params.uID
+	// })
+	// if (targetUser) {
+	// 	response.status(200);
+	// 	// Create copies of review objects to access attributes to display on user's page
+	// 	let reviewObjs = [];
+	// 	targetUser.reviews.forEach(reviewID => {
+	// 		reviewsArray.forEach(reviewObj => {
+	// 			if (reviewID == reviewObj.rID)
+	// 			reviewObjs.push(Object.assign({}, reviewObj))
+	// 		});
+	// 	});
+	// 	// Create copies of movie objects to display with each review
+	// 	moviesArray.forEach(movieObj => {
+	// 		reviewObjs.forEach(reviewObj => {
+	// 			if (movieObj.mID == reviewObj.movie)
+	// 				reviewObj.movie = Object.assign({}, movieObj);
+	// 		});
+	// 	});
+	// 	// Display profile if user is logged in
+	// 	if (request.session.username == targetUser.uID)
+	// 		response.send(pug.renderFile("./pages/profile.pug", { profile: targetUser }));
+	// 	else {
+	// 		if (request.session.username)
+	// 			response.send(pug.renderFile("./pages/user.pug", { user: targetUser, profile: request.session.username, reviews: reviewObjs}));
+	// 		else
+	// 			response.send(pug.renderFile("./pages/user.pug", { user: targetUser, reviews: reviewObjs}));
+	// 	}
+	// } else 
+	// 	response.status(404).send(`User with ID ${request.params.uID} does not exist.`);
 });
 
 // Adds new user to database
@@ -500,6 +554,12 @@ app.put("/users/:uID/usersFollowing", (request, response) => {
 			response.status(401).send("Not logged in.");
 	});
 app.put("/users/:uID/watchlist", (request, response) => {
+
+		const filter = { _id: request.params.uID }
+		const update = { "$push": { "watchlist": request.params.mID } }
+		User.findOneAndUpdate(filter, update, { new: true }, (err, result) => {
+			console.log(result);
+		})
 		// Get user making request
 		let profileUser = usersArray.find(obj => {
 			return obj.uID === request.session.username
@@ -705,6 +765,7 @@ function signup(request, response) {
 			reviews: [],
 			peopleFollowing: [],
 			usersFollowing: [],
+			followers: [],
 			watchlist: [],
 			recommended: [],
 			notifications: [],
@@ -717,28 +778,38 @@ function signup(request, response) {
 }
 
 function login(request, response) {
-	if (request.session.loggedin) {
+	if (session.loggedin) {
 		response.status(401).send("Already logged in.");
 	 	return;
 	}
-  
-	let username = request.body.username;
-	let password = request.body.password;
-  
+	let logInUser = request.body
+	console.log(logInUser);
+	
 	// Check if a user with the specified ID exists
-	let targetUser = usersArray.find(obj => {
-		return obj.uID === username
+	User.findOne({ username: logInUser.username, password: logInUser.password }).exec((err, user) => {
+		if (err) response.status(401).send("Entered wrong credentials")
+
+		request.session.username = user.username
+		request.session.uID = user._id.toString()
+		request.session.loggedin = true
+		session.loggedin = true
+		console.log(request.session);
+		console.log("Found user: " + user.username);
+		response.redirect(`/users/${user._id.toString()}`)
 	})
-	if (!targetUser) {
-		response.status(401).send("Unauthorized");
-	  	return;
-	}
-	else if (targetUser.password === password) {
-		request.session.loggedin = true;
-		request.session.username = username;
-		response.redirect("/profile");
-	} else
-		response.status(401).send("Not authorized. Invalid password.");
+	// let targetUser = usersArray.find(obj => {
+	// 	return obj.uID === username
+	// })
+	// if (!targetUser) {
+	// 	response.status(401).send("Unauthorized");
+	//   	return;
+	// }
+	// else if (targetUser.password === password) {
+	// 	request.session.loggedin = true;
+	// 	request.session.username = username;
+	// 	response.redirect("/profile");
+	// } else
+	// 	response.status(401).send("Not authorized. Invalid password.");
 	
 }
 
@@ -767,6 +838,10 @@ function movieMatch (movie, query) {
 	return titleCheck && actorCheck && genreCheck;
 }
 
-
-app.listen(port);
-console.log("Server listening at http://localhost:3000");
+mongoose.connect('mongodb://localhost/movieDB', { useNewUrlParser: true });
+let db = mongoose.connection;
+db.on("error", console.error.bind(console, 'connection error:'));
+db.once('open', function () {
+	app.listen(port);
+	console.log("Server listening at http://localhost:3000");
+});

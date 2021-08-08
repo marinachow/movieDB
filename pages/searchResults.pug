@@ -1,0 +1,24 @@
+html
+	head
+	style
+		include ../center.css
+		title Search Results
+	body
+
+		include ../partials/header
+
+		div#main
+			h3 Search results
+			each movie in movies
+				a(href="/movies/" + movie.mID) #{movie.Title}
+				br
+			
+			if current > 1
+				- let url = "http://localhost:3000/movies?page=" + (current-1)
+				- if(qstring.length > 0){ url += "&" + qstring; }
+				a(href=url) Previous
+				| 
+			if count > 10
+				- url = "http://localhost:3000/movies?page=" + (current+1)
+				- if(qstring.length > 0){ url += "&" + qstring; }
+				a(href=url) Next

@@ -1,0 +1,25 @@
+html
+	head
+	style
+		include ../center.css
+		title Movie Search
+	body
+
+		include ../partials/header
+
+		div#main
+			h1 Movie Database
+			h3 Search for a movie
+			form(action="/movies" method="get")
+				label(for='byTitle') By title:
+				input(name='Title' type='text')
+				br
+				label(for='byActor') By actor:
+				input(name='Actor' type='text')
+				br
+				label(for="byGenre") By genre:
+				input(name="Genre" type="text")
+				br
+				br
+				button(type="submit") Search
+			

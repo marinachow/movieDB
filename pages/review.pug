@@ -1,0 +1,19 @@
+html
+	head
+	style
+		include ../center.css
+		title Movie
+	body
+
+		include ../partials/header
+
+		div#main
+		h3 Movie:
+		a(href="/movies/" + movie.mID) #{movie.Title}
+		h4 Reviewer: 
+		a(href="/users/" + reviewer.uID) #{reviewer.uID}
+		h4 Score: #{review.rating}/10
+		h4 Summary: 
+		p #{review.summary}
+		h4 Full Review: 
+		p #{review.full}

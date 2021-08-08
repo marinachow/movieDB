@@ -1,0 +1,42 @@
+html
+	head
+	style
+		include ../center.css
+		title User
+	body
+
+		include ../partials/header
+
+		div#main
+			h1 User Profile
+			h4 Username: #{user.uID}
+			if (profile)
+				form(action="/users/" + profile + "/usersFollowing/?_method=PUT" method="post")
+					button(type="submit" name="followUser" value=user.uID) Follow
+				| 
+				form(action="/users/" + profile + "/usersFollowing/?_method=PUT" method="post")
+					button(type="submit" name="unfollowUser" value=user.uID) Unfollow
+			h4 Reviews they've written:
+			if reviews
+				each review in reviews
+					label #{review.rating}/10
+					br
+					a(href="/movies/" + review.movie.mID) #{review.movie.Title}
+					br
+					label #{review.summary}
+					br
+					| 
+					a(href="/reviews/" + review.rID) View details
+					br
+					br
+			h4 People they follow:
+			if user.people
+				each person in user.people
+					a(href="/people/" + person.pID) #{person.pID}
+					br
+			h4 Movies they've watched:
+			if user.watchlist
+				each movie in user.watchlist
+					a(href="/movies/" + movie.mID) #{movie.Title}
+					br
+			

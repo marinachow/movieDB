@@ -1,0 +1,100 @@
+<!--Marina Chow (101050751)-->
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="/center">
+        <title>Contribute</title>
+    </head>
+    <body>
+        <a href="/">Home</a>
+        <h1>Movie Database</h1>
+        <h3>Contribute</h3>
+        <h4>Add a Movie</h4>
+        <form action="/movies" method="post">
+            <label>Title:</label>
+            <input name="Title" type="text"/><br>
+            <label>Runtime (in mins):</label>
+            <input name="Runtime" type="text"/><br>
+            <label>Release Year:</label>
+            <input name="Released" type="text"/><br>
+            <!--dynamically search for people -->
+            <label>Writers (at least one):</label>
+            <input id="writerInput" list="Writer" type="text" placeholder="search" oninput="refreshWriters()"/>
+            <input type="button" onclick="addWriter()" value="Add Writer"></input>
+            <br>
+            <input id="writerValues" name="Writer">
+            <datalist id="Writer"></datalist>
+            <br>
+            <label>Directors (at least one):</label>
+            <input id="directorInput" list="Director" type="text" placeholder="search" oninput="refreshDirectors()"/>
+            <input type="button" onclick="addDirector()" value="Add Director"></input>
+            <br>
+            <input id="directorValues" name="Director">
+            <datalist id="Director"></datalist>
+            <br>
+            <label>Actors (at least one):</label>
+            <input id="actorInput" list="Actor" type="text" placeholder="search" oninput="refreshActors()"/>
+            <input type="button" onclick="addActor()" value="Add Actor"></input>
+            <br>
+            <input id="actorValues" name="Actor">
+            <datalist id="Actor"></datalist>
+            <br>
+            <label>Genres (at least one):</label>
+            <input name="Genre" type="text"/><br>
+            <label>Plot:</label>
+            <textarea name="Plot" rows="2" cols="30"></textarea><br>
+            <button type="submit">Add Movie</button><br>
+        </form>
+        <script>
+            function refreshWriters(){
+                const xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        document.getElementById("Writer").innerHTML = xhttp.response;
+                    }
+                };
+                let person = document.getElementById("writerInput").value;
+                xhttp.open("GET", "http://localhost:3000/people?pID=" + person, true);
+                xhttp.send();
+            }
+            function refreshDirectors(){
+                const xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        document.getElementById("Director").innerHTML = xhttp.response;
+                    }
+                };
+                let person = document.getElementById("directorInput").value;
+                xhttp.open("GET", "http://localhost:3000/people?pID=" + person, true);
+                xhttp.send();
+            }
+            function refreshActors(){
+                const xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        document.getElementById("Actor").innerHTML = xhttp.response;
+                    }
+                };
+                let person = document.getElementById("actorInput").value;
+                xhttp.open("GET", "http://localhost:3000/people?pID=" + person, true);
+                xhttp.send();
+            }
+            function addWriter(){
+                if (!document.getElementById("writerValues").value.includes(document.getElementById("writerInput").value))
+                    document.getElementById("writerValues").value += document.getElementById("writerInput").value + ", "
+                document.getElementById("writerInput").value = ""
+            }
+            function addDirector(){
+                if (!document.getElementById("directorValues").value.includes(document.getElementById("directorInput").value))
+                    document.getElementById("directorValues").value += document.getElementById("directorInput").value + ", "
+                document.getElementById("directorInput").value = ""
+            }
+            function addActor(){
+                if (!document.getElementById("actorValues").value.includes(document.getElementById("actorInput").value))
+                    document.getElementById("actorValues").value += document.getElementById("actorInput").value + ", "
+                document.getElementById("actorInput").value = ""
+            }
+        </script>
+    </body>
+</html>

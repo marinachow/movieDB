@@ -1,0 +1,73 @@
+html
+	head
+	style
+		include ../center.css
+		title My Profile
+	body
+
+		include ../partials/header
+
+		div#main
+			h1 My Profile
+			a(href="/users/:uID/logout") Logout 
+			h4 Username: #{profile.uID}
+			if profile.type === "regular"
+				h4 Account Type: Regular
+				form(action="/users/" + profile.uID + "/accountType/?_method=PUT" method="post")
+					button(type="submit") Upgrade to Contributer
+			if profile.type === "contributer"
+				h4 Account Type: Contributer
+				form(action="/users/" + profile.uID + "/accountType/?_method=PUT" method="post")
+					button(type="submit") Change to Regular
+				h4 Contribute:
+				a(href="/addPerson") Add Person
+				br
+				a(href="/addMovie") Add Movie
+			
+			h4 People you follow:
+			form(action="/users/" + profile.uID + "/peopleFollowing/?_method=PUT" method="post")
+				if profile.peopleFollowing.length > 0
+					each person in profile.peopleFollowing
+						input(type='radio' name='unfollowPerson' value=person.pID)
+						a(href="/people/" + person.pID) #{person.pID}
+						br
+					br
+					button(type="submit") Unfollow
+
+			h4 Users you follow:
+			form(action="/users/" + profile.uID + "/usersFollowing/?_method=PUT" method="post")
+				if profile.usersFollowing.length > 0
+					each user in profile.usersFollowing
+						input(type='radio' name='unfollowUser' value=user)
+						a(href="/users/" + user) #{user}
+						br
+					br
+					button(type="submit") Unfollow
+
+			h4 Movies you've watched:
+			form(action="/users/" + profile.uID + "/watchlist/?_method=PUT" method="post")
+				if profile.watchlist.length > 0
+					each watched in profile.watchlist
+						input(type='radio' name='removeMovie' value=watched.mID)
+						a(href="/movies/" + watched.mID) #{watched.Title}
+						br
+					br
+					button(type="submit") Remove Movie
+
+			h4 Movies you might like:
+			if profile.recommended
+				each movie in profile.recommended
+					a(href="/movies/" + movie.mID) #{movie.Title}
+					br
+
+			h4 Notifications: 
+			form(action="/users/" + profile.uID + "/notifications/?_method=PUT" method="post")
+				if profile.notifications.length > 0
+					each n in profile.notifications
+						input(type='radio' name="notification" value=n)
+						label #{n}
+						br
+					br
+					button(type="submit") Delete
+		
+		

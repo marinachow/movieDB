@@ -1,0 +1,80 @@
+html
+	head
+	style
+		include ../center.css
+		title Movie
+	body
+
+		include ../partials/header
+
+		div#main
+		h3 #{movie.Title}
+		if (profile)
+			form(action="/users/" + profile + "/watchlist/?_method=PUT" method="post")
+				button(type="submit" name="addMovie" value=movie.mID) Add to Watched List
+			| 
+			form(action="/users/" + profile + "/watchlist/?_method=PUT" method="post")
+				button(type="submit" name="removeMovie" value=movie.mID) Remove from Watched List
+		br
+		h4 Released: #{movie.Released}
+		h4 Runtime: #{movie.Runtime}
+		if (movie.AverageRating > 0)
+			h4 Average Rating: #{movie.AverageRating}/10
+		h4 Plot: 
+		p #{movie.Plot}
+		h4 Genre: 
+		each genre in movie.Genre
+			a(href="/movies?page=1&limit=10&Genre=" + genre) #{genre}
+			| 
+		h4 Directors:
+		each director in movie.Director
+			a(href="/people/" + director.pID) #{director.pID}
+			br
+		h4 Writers:
+		each writer in movie.Writer
+			a(href="/people/" + writer.pID) #{writer.pID}
+			br
+		h4 Actors:
+		each actor in movie.Actors
+			a(href="/people/" + actor.pID) #{actor.pID}
+			br
+		h4 Similar Movies:
+		if (similars)
+			each similar in similars
+				a(href="/movies/" + similar.mID) #{similar.Title}
+				br
+		h4 Reviews:
+		if (reviews)
+			each review in reviews
+				label Written by: 
+				a(href="/users/" + review.reviewer.uID) #{review.reviewer.uID}
+				br
+				label #{review.rating}/10
+				br
+				label #{review.summary}
+				br
+				| 
+				a(href="/reviews/" + review.rID) View details
+				br
+				br
+			br
+		if (profile)
+			label Rating (between 1 and 10):
+			form(action="/reviews" method="post")
+				textarea(name="movie" style="display:none;") #{movie.mID}
+				textarea(name="reviewer" style="display:none;") #{profile}
+				br
+				input(type="number" id="rating" placeholder="1-10" name="rating" min="1" max="10")
+				| 
+				button(type="submit" name="basic") Submit Basic Review
+				br
+				label Breif Summary:
+				br
+				textarea(name="breif", cols="50", rows="1") 
+				br
+				label Full Review Text:
+				br
+				textarea(name="review" rows="6" cols="50")
+				br
+				button(type="submit" name="full") Submit Full Review
+		

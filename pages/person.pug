@@ -1,0 +1,41 @@
+html
+	head
+	style
+		include ../center.css
+		title Person
+	body
+
+		include ../partials/header
+
+		div#main
+			h4 Name: #{person.pID}
+			if (profile)
+				form(action="/users/" + profile + "/peopleFollowing/?_method=PUT" method="post")
+					button(type="submit" name="followPerson" value=person.pID) Follow
+				| 
+				form(action="/users/" + profile + "/peopleFollowing/?_method=PUT" method="post")
+					button(type="submit" name="unfollowPerson" value=person.pID) Unfollow
+			
+			h4 Work History:
+			if person.works
+				each work in person.works
+					each actor in work.Actors
+						if (person.pID == actor.pID)
+							h4 Acted in
+							a(href="/movies/" + work.mID) #{work.Title}
+							br
+					each director in work.Director
+						if (person.pID == director.pID)
+							h4 Directed
+							a(href="/movies/" + work.mID) #{work.Title}
+							br
+					each writer in work.Writer
+						if (person.pID == writer.pID)
+							h4 Wrote
+							a(href="/movies/" + work.mID) #{work.Title}
+							br
+			h4 Top Collaborators:
+			if person.collabs
+				each collab in person.collabs
+					a(href="/people/" + collab.pID) #{collab.pID}
+					br
